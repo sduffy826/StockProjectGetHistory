@@ -28,9 +28,9 @@ import java.io.FileNotFoundException;
 import java.io.BufferedOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
+//import java.util.Calendar;
 import java.util.List;
-import java.util.Map;
+//import java.util.Map;
 import java.util.Random;
 
 import org.apache.http.HttpEntity;
@@ -40,12 +40,13 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.utils.HttpClientUtils;
 import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.cookie.Cookie;
+//import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.client.methods.HttpGet;
 
-import org.apache.commons.lang3.StringEscapeUtils;
+// import org.apache.commons.lang3.StringEscapeUtils; used to be in lang3
+import org.apache.commons.text.StringEscapeUtils;
 
 public class YahooStockPull {
 
@@ -165,7 +166,7 @@ public class YahooStockPull {
 
   public void downloadData2(String symbol, String eventType, long startDate,
       long endDate, String crumb) {
-    String filename = String.format(".\\output\\%s_%s.csv", symbol, eventType);
+    String filename = String.format(".%soutput%s%s_%s.csv", File.separator, File.separator, symbol, eventType);
     String url = String.format(
         "https://query1.finance.yahoo.com/v7/finance/download/%s?period1=%s&period2=%s&interval=1d&events=%s&crumb=%s",
         symbol, startDate, endDate, eventType, crumb);
@@ -205,7 +206,7 @@ public class YahooStockPull {
   }
   
   private boolean downloadExists(String symbol, String eventType) {
-    String fileName = String.format(".\\output\\%s_%s.csv", symbol, eventType);
+    String fileName = String.format(".%soutput%s%s_%s.csv", File.separator, File.separator, symbol, eventType);
     return (new File(fileName)).exists();
   }  
   
