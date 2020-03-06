@@ -247,8 +247,8 @@ public class YahooStockPull {
   private String[] processFile(String fileName) {   
     String inLine;
     List<String> listOfSymbols = new ArrayList<String>();    
-    try {
-      BufferedReader in = new BufferedReader(new FileReader(fileName));
+    // try {
+    try (BufferedReader in = new BufferedReader(new FileReader(fileName))) {;
       while ((inLine = in.readLine()) != null) {
         String theArray[] = inLine.trim().split("[ \\t]+"); // One or more
                                                             // spaces
