@@ -1,11 +1,14 @@
 
 /**
 *
-* Script to download Yahoo historical quotes using the new cookie authenticated site.
-*
-* Usage: java -classpath $CLASSPATH GetJavaQuotes SYMBOL
-*
-*
+* Pulls yahoo historical quotes.
+* 
+* This is a tweaked version of Brad's stock quote pull.  It processes symbols from a file
+* as opposed to a parameter.  It is solely used for my own personal use and not 
+* distributed. 
+* 
+* Original author info below:
+* ---------------------------
 * Author: Brad Lucas brad@beaconhill.com
 * Latest: https://github.com/bradlucas/get-yahoo-quotes
 *
