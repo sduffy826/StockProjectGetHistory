@@ -21,9 +21,11 @@
 *
 */
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -84,7 +86,7 @@ public class YahooStockPull {
       StringBuffer result = new StringBuffer();
       String line = "";
       while ((line = rd.readLine()) != null) {
-        if (debugIt && 1 == 0)
+        if (debugIt && 1 == 1)
           System.out.println("getPage, line:" + line);
         result.append(line);
       }
@@ -106,12 +108,21 @@ public class YahooStockPull {
   public String findCrumb(List<String> lines) {
     String crumb = "";
     String rtn = "";
+    try {
+    BufferedWriter buffWriter = new BufferedWriter(
+        new FileWriter(new File("foofy.bar")));
     for (String l : lines) {
+      buffWriter.write(l);
+      buffWriter.newLine();
       if (l.indexOf("CrumbStore") > -1) {
         rtn = l;
+        System.out.println("Found crumb in: " + rtn);
         break;
       }
     }
+    buffWriter.close();
+    }
+    catch (Exception e) { }
     // ,"CrumbStore":{"crumb":"OKSUqghoLs8"
     if (rtn != null && !rtn.isEmpty()) {
       String[] vals = rtn.split(":"); // get third item
@@ -119,6 +130,7 @@ public class YahooStockPull {
       crumb = StringEscapeUtils.unescapeJava(crumb); // unescape escaped values
                                                      // (particularly, \u002f
     }
+    else System.out.println("Didn't find crumb");
     return crumb;
   }
 
