@@ -69,25 +69,28 @@ public class YahooStockPull {
 
   public String getPage(String symbol) {
     String rtn = null;
-    String url = String.format("https://finance.yahoo.com/quote/%s/?p=%s",
-        symbol, symbol);
+    String url = String.format("https://finance.yahoo.com/quote/%s/?p=%s",symbol, symbol);
     HttpGet request = new HttpGet(url);
     System.out.println(url);
 
-    request.addHeader("User-Agent",
-        "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.13) Gecko/20101206 Ubuntu/10.10 (maverick) Firefox/3.6.13");
+    // Changed header 01/17/2021... old header caused CrumbStore not to appear in content
+    // request.addHeader("User-Agent",
+    //    "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.13) Gecko/20101206 Ubuntu/10.10 (maverick) Firefox/3.6.13");
+    request.addHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:74.0) Gecko/20100101 Firefox/74.0");
     try {
       HttpResponse response = client.execute(request, context);
-      System.out.println(
-          "Response Code : " + response.getStatusLine().getStatusCode());
+      System.out.println("Response Code : " + response.getStatusLine().getStatusCode());
 
-      BufferedReader rd = new BufferedReader(
-          new InputStreamReader(response.getEntity().getContent()));
+      BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
       StringBuffer result = new StringBuffer();
       String line = "";
       while ((line = rd.readLine()) != null) {
-        if (debugIt && 1 == 1)
+        if (debugIt && 1 == 0)
           System.out.println("getPage, line:" + line);
+        if (debugIt && line.indexOf("CrumbSt") > -1) {  // Specific to getting crumb info
+          int beginIndex = line.indexOf("CrumbSt");
+          System.out.println("has CrumbSt: " + line.substring(beginIndex));
+        }
         result.append(line);
       }
       rtn = result.toString();
@@ -108,21 +111,12 @@ public class YahooStockPull {
   public String findCrumb(List<String> lines) {
     String crumb = "";
     String rtn = "";
-    try {
-    BufferedWriter buffWriter = new BufferedWriter(
-        new FileWriter(new File("foofy.bar")));
     for (String l : lines) {
-      buffWriter.write(l);
-      buffWriter.newLine();
       if (l.indexOf("CrumbStore") > -1) {
         rtn = l;
-        System.out.println("Found crumb in: " + rtn);
         break;
       }
     }
-    buffWriter.close();
-    }
-    catch (Exception e) { }
     // ,"CrumbStore":{"crumb":"OKSUqghoLs8"
     if (rtn != null && !rtn.isEmpty()) {
       String[] vals = rtn.split(":"); // get third item
@@ -130,7 +124,9 @@ public class YahooStockPull {
       crumb = StringEscapeUtils.unescapeJava(crumb); // unescape escaped values
                                                      // (particularly, \u002f
     }
-    else System.out.println("Didn't find crumb");
+    else 
+      System.out.println("Didn't find crumb");
+    
     return crumb;
   }
 
@@ -138,49 +134,43 @@ public class YahooStockPull {
     return findCrumb(splitPageData(getPage(symbol)));
   }
 
-  public void downloadData(String symbol, long startDate, long endDate,
-      String crumb) {
-    String filename = String.format("%s.csv", symbol);
-    String url = String.format(
-        "https://query1.finance.yahoo.com/v7/finance/download/%s?period1=%s&period2=%s&interval=1d&events=history&crumb=%s",
-        symbol, startDate, endDate, crumb);
-    HttpGet request = new HttpGet(url);
-    System.out.println(url);
+  /* This is the original version... main difference to one I added is the addition of eventType
+   * so that I could get history, dividend or splits.  Also prefixed output filename with 'output' 
+   * directory
+   * 
+   * public void downloadData(String symbol, long startDate, long endDate, String
+   * crumb) { String filename = String.format("%s.csv", symbol); String url =
+   * String.format(
+   * "https://query1.finance.yahoo.com/v7/finance/download/%s?period1=%s&period2=%s&interval=1d&events=history&crumb=%s",
+   * symbol, startDate, endDate, crumb); HttpGet request = new HttpGet(url);
+   * System.out.println(url);
+   * 
+   * // Changed header 1/17/2021 // request.addHeader("User-Agent", //
+   * "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.13) Gecko/20101206 Ubuntu/10.10 (maverick) Firefox/3.6.13"
+   * ); request.addHeader("User-Agent",
+   * "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:74.0) Gecko/20100101 Firefox/74.0"
+   * ); try { HttpResponse response = client.execute(request, context);
+   * System.out.println("Response Code : " +
+   * response.getStatusLine().getStatusCode()); HttpEntity entity =
+   * response.getEntity();
+   * 
+   * String reasonPhrase = response.getStatusLine().getReasonPhrase(); int
+   * statusCode = response.getStatusLine().getStatusCode();
+   * 
+   * System.out.println(String.format("statusCode: %d", statusCode));
+   * System.out.println(String.format("reasonPhrase: %s", reasonPhrase));
+   * 
+   * if (entity != null) { BufferedInputStream bis = new
+   * BufferedInputStream(entity.getContent()); BufferedOutputStream bos = new
+   * BufferedOutputStream( new FileOutputStream(new File(filename))); int inByte;
+   * while ((inByte = bis.read()) != -1) bos.write(inByte); bis.close();
+   * bos.close(); } HttpClientUtils.closeQuietly(response);
+   * 
+   * } catch (Exception ex) { System.out.println("Exception");
+   * System.out.println(ex); } }
+   */
 
-    request.addHeader("User-Agent",
-        "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.13) Gecko/20101206 Ubuntu/10.10 (maverick) Firefox/3.6.13");
-    try {
-      HttpResponse response = client.execute(request, context);
-      System.out.println(
-          "Response Code : " + response.getStatusLine().getStatusCode());
-      HttpEntity entity = response.getEntity();
-
-      String reasonPhrase = response.getStatusLine().getReasonPhrase();
-      int statusCode = response.getStatusLine().getStatusCode();
-
-      System.out.println(String.format("statusCode: %d", statusCode));
-      System.out.println(String.format("reasonPhrase: %s", reasonPhrase));
-
-      if (entity != null) {
-        BufferedInputStream bis = new BufferedInputStream(entity.getContent());
-        BufferedOutputStream bos = new BufferedOutputStream(
-            new FileOutputStream(new File(filename)));
-        int inByte;
-        while ((inByte = bis.read()) != -1)
-          bos.write(inByte);
-        bis.close();
-        bos.close();
-      }
-      HttpClientUtils.closeQuietly(response);
-
-    } catch (Exception ex) {
-      System.out.println("Exception");
-      System.out.println(ex);
-    }
-  }
-
-  public void downloadData2(String symbol, String eventType, long startDate,
-      long endDate, String crumb) {
+  public void downloadData2(String symbol, String eventType, long startDate, long endDate, String crumb) {
     String filename = String.format(".%soutput%s%s_%s.csv", File.separator, File.separator, symbol, eventType);
     String url = String.format(
         "https://query1.finance.yahoo.com/v7/finance/download/%s?period1=%s&period2=%s&interval=1d&events=%s&crumb=%s",
@@ -188,12 +178,12 @@ public class YahooStockPull {
     HttpGet request = new HttpGet(url);
     System.out.println(url);
 
-    request.addHeader("User-Agent",
-        "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.13) Gecko/20101206 Ubuntu/10.10 (maverick) Firefox/3.6.13");
+    // request.addHeader("User-Agent",
+    //     "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.13) Gecko/20101206 Ubuntu/10.10 (maverick) Firefox/3.6.13");
+    request.addHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:74.0) Gecko/20100101 Firefox/74.0");
     try {
       HttpResponse response = client.execute(request, context);
-      System.out.println(
-          "Response Code : " + response.getStatusLine().getStatusCode());
+      System.out.println("Response Code : " + response.getStatusLine().getStatusCode());
       HttpEntity entity = response.getEntity();
 
       String reasonPhrase = response.getStatusLine().getReasonPhrase();
@@ -270,7 +260,7 @@ public class YahooStockPull {
         if (theArray.length < 1) {
           System.out.println("Invalid record for parsing, bypassed: " + inLine);
         } else {
-          listOfSymbols.add(theArray[0].toUpperCase());
+          listOfSymbols.add(theArray[0].toUpperCase());  // Only take symbol value
         } 
       } 
     } // end of try block
